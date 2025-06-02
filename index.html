@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visualizador Interactivo de Trayectorias 3D</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0;
+            font-family: Arial; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #info, #control-panel {
+            position: absolute;
+            color: white;
+            z-index: 100;
+        }
+        #info {
+            top: 10px; width: 100%; text-align: center;
+            pointer-events: none;
+        }
+        #control-panel {
+            top: 20px; left: 20px; background: rgba(0,0,0,0.7);
+            padding: 15px; border-radius: 8px; width: 300px; max-height: 80vh; overflow-y: auto;
+        }
+        .control-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin: 5px 0; }
+        input[type="text"] { width: 100%; padding: 8px; border-radius: 4px; border: none; }
+        button { padding: 8px 15px; margin: 5px 5px 5px 0; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.9; }
+        button.secondary { background: #f44336; color: white; }
+        button:not(.secondary) { background: #4CAF50; color: white; }
+        .vector-color { display: inline-block; width: 15px; height: 15px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+        
+        /* Estilos para el pie de página */
+        #footer {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 15px;
+            z-index: 100;
+        }
+        #footer-content {
+            display: none; /* Inicialmente oculto */
+            flex-wrap: wrap;
+        }
+        #about-section {
+            flex: 1;
+            min-width: 300px;
+            margin-right: 20px;
+        }
+        #author-section {
+            flex: 0 0 200px;
+        }
+        h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        #toggle-footer {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        .footer-visible #footer-content {
+            display: flex; /* Se muestra cuando tiene la clase footer-visible */
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <div id="info">Visualizador de Trayectorias 3D</div>
+        <div id="control-panel">
+            <h2>Configuración de Trayectoria</h2>
+            <div class="control-group">
+                <label>Posición X(t): <input id="position-x" value="Math.cos(t)"></label>
+                <label>Posición Y(t): <input id="position-y" value="Math.sin(t)"></label>
+                <label>Posición Z(t): <input id="position-z" value="t/3"></label>
+            </div>
+            <div class="control-group">
+                <label><span class="vector-color" style="background:red"></span>Velocidad Vx(t): <input id="velocity-x" value="-Math.sin(t)"></label>
+                <label><span class="vector-color" style="background:red"></span>Velocidad Vy(t): <input id="velocity-y" value="Math.cos(t)"></label>
+                <label><span class="vector-color" style="background:red"></span>Velocidad Vz(t): <input id="velocity-z" value="1/3"></label>
+            </div>
+            <div class="control-group">
+                <label><span class="vector-color" style="background:lime"></span>Aceleración Ax(t): <input id="acceleration-x" value="-Math.cos(t)"></label>
+                <label><span class="vector-color" style="background:lime"></span>Aceleración Ay(t): <input id="acceleration-y" value="-Math.sin(t)"></label>
+                <label><span class="vector-color" style="background:lime"></span>Aceleración Az(t): <input id="acceleration-z" value="0"></label>
+            </div>
+            <div class="control-group">
+                <label>t mínimo: <input id="t-min" value="0"></label>
+                <label>t máximo: <input id="t-max" value="6*Math.PI"></label>
+                <label>Mostrar vectores en t = <input id="t-value" value="1"></label>
+            </div>
+            <button id="plot-btn">Graficar Trayectoria</button>
+            <button id="show-vectors-btn">Mostrar Vectores</button>
+            <button id="reset-btn" class="secondary">Resetear Vista</button>
+        </div>
+    </div>
+
+    <!-- Pie de página -->
+    <div id="footer">
+        <button id="toggle-footer">Mostrar información</button>
+        <div id="footer-content">
+            <div id="about-section">
+                <h3>Acerca de esta aplicación</h3>
+                <p>Este visualizador 3D te permite graficar trayectorias definidas por ecuaciones paramétricas en función del tiempo (t).</p>
+                <p><strong>Instrucciones de uso:</strong></p>
+                <ul>
+                    <li>Ingresa las ecuaciones para las componentes X, Y, Z de la posición</li>
+                    <li>Puedes también definir ecuaciones para los vectores velocidad y aceleración</li>
+                    <li>Haz clic en "Graficar Trayectoria" para visualizar la curva</li>
+                    <li>Usa "Mostrar Vectores" para ver velocidad (rojo) y aceleración (verde) en un punto t específico</li>
+                    <li>Arrastra con el mouse para rotar la vista, usa la rueda para zoom</li>
+                    <li>Ejemplos de funciones: Math.sin(t), Math.cos(t), t/2, etc.</li>
+                </ul>
+            </div>
+            <div id="author-section">
+                <h3>Autor</h3>
+                <p>Aplicación desarrollada por JR</p>
+                <p>© 2025 - Todos los derechos reservados</p>
+                <p>Contacto: [tu@email.com]</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    let scene, camera, renderer, trajectory, velocityVector, accelerationVector;
+    let isDragging = false, previousMousePosition = { x: 0, y: 0 };
+
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 5, 5);
+        camera.lookAt(0, 0, 0);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').prepend(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0x404040));
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1);
+        scene.add(light);
+        scene.add(new THREE.AxesHelper(3));
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        renderer.domElement.addEventListener('wheel', (e) => {
+            camera.position.multiplyScalar(e.deltaY > 0 ? 1.1 : 0.9);
+        });
+
+        renderer.domElement.addEventListener('mousedown', e => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        document.addEventListener('mouseup', () => isDragging = false);
+        document.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const delta = { x: e.clientX - previousMousePosition.x, y: e.clientY - previousMousePosition.y };
+            camera.position.x -= delta.x * 0.01;
+            camera.position.y += delta.y * 0.01;
+            camera.lookAt(0, 0, 0);
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        document.getElementById('plot-btn').onclick = plotTrajectory;
+        document.getElementById('show-vectors-btn').onclick = showVectors;
+        document.getElementById('reset-btn').onclick = () => camera.position.set(5, 5, 5);
+        
+        // Toggle para el pie de página
+        const toggleBtn = document.getElementById('toggle-footer');
+        const footer = document.getElementById('footer');
+        
+        toggleBtn.onclick = () => {
+            footer.classList.toggle('footer-visible');
+            const isVisible = footer.classList.contains('footer-visible');
+            toggleBtn.textContent = isVisible ? 'Ocultar información' : 'Mostrar información';
+        };
+
+        plotTrajectory();
+        animate();
+    }
+
+    function evaluateExpression(expr, t) {
+        try {
+            return new Function('t', `with(Math){return ${expr}}`)(t);
+        } catch { return 0; }
+    }
+
+    function plotTrajectory() {
+        if (trajectory) scene.remove(trajectory);
+        if (velocityVector) scene.remove(velocityVector);
+        if (accelerationVector) scene.remove(accelerationVector);
+
+        const xE = document.getElementById('position-x').value;
+        const yE = document.getElementById('position-y').value;
+        const zE = document.getElementById('position-z').value;
+        const tMin = evaluateExpression(document.getElementById('t-min').value, 0);
+        const tMax = evaluateExpression(document.getElementById('t-max').value, 0);
+
+        const points = [];
+        for (let i = 0; i <= 200; i++) {
+            const t = tMin + (tMax - tMin) * i / 200;
+            points.push(new THREE.Vector3(
+                evaluateExpression(xE, t),
+                evaluateExpression(yE, t),
+                evaluateExpression(zE, t)
+            ));
+        }
+
+        trajectory = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(points),
+            new THREE.LineBasicMaterial({ color: 0x00ffff })
+        );
+        scene.add(trajectory);
+    }
+
+    function showVectors() {
+        if (velocityVector) scene.remove(velocityVector);
+        if (accelerationVector) scene.remove(accelerationVector);
+
+        const t = evaluateExpression(document.getElementById('t-value').value, 0);
+
+        const px = evaluateExpression(document.getElementById('position-x').value, t);
+        const py = evaluateExpression(document.getElementById('position-y').value, t);
+        const pz = evaluateExpression(document.getElementById('position-z').value, t);
+        const base = new THREE.Vector3(px, py, pz);
+
+        const vx = evaluateExpression(document.getElementById('velocity-x').value, t);
+        const vy = evaluateExpression(document.getElementById('velocity-y').value, t);
+        const vz = evaluateExpression(document.getElementById('velocity-z').value, t);
+        const velEnd = base.clone().add(new THREE.Vector3(vx, vy, vz));
+        velocityVector = createVectorArrow(base, velEnd, 0xff0000);
+
+        const ax = evaluateExpression(document.getElementById('acceleration-x').value, t);
+        const ay = evaluateExpression(document.getElementById('acceleration-y').value, t);
+        const az = evaluateExpression(document.getElementById('acceleration-z').value, t);
+        const accEnd = base.clone().add(new THREE.Vector3(ax, ay, az));
+        accelerationVector = createVectorArrow(base, accEnd, 0x00ff00);
+
+        const dotGeometry = new THREE.BufferGeometry().setFromPoints([base]);
+        const dotMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+        const point = new THREE.Points(dotGeometry, dotMaterial);
+        scene.add(point);
+
+        scene.add(velocityVector);
+        scene.add(accelerationVector);
+    }
+
+    function createVectorArrow(start, end, color) {
+        const dir = new THREE.Vector3().subVectors(end, start);
+        return new THREE.ArrowHelper(dir.clone().normalize(), start, dir.length(), color);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+
+    init();
+    </script>
+</body>
+</html>
